@@ -105,7 +105,8 @@ class SheetMapper:
                  row_names_index,
                  col_names_index
                  ):
-        self.df: pd.DataFrame = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
+       # path_to_excel = pd.ExcelFile(file_path)
+        self.df: pd.DataFrame = pd.read_excel(file_path, sheet_name=sheet_name, header=None, engine='openpyxl')
         self.row_series = self.df[row_names_index]
         self.col_series = self.df.iloc[col_names_index]
         self.col_names_index = col_names_index
