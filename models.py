@@ -2,7 +2,7 @@ from typing import List, Dict
 
 import pandas as pd
 import re
-
+import math
 
 def parse_value(value: str):
     if isinstance(value, str):
@@ -12,14 +12,10 @@ def parse_value(value: str):
 
         return value
 
-        # if value == Rule.NAN:
-        #     return None
-
     return None
 
 
 def parse_to_rules(df: pd.DataFrame):
-
     rules: List[Rule] = []
 
     for index, row in df.iterrows():
@@ -31,7 +27,7 @@ def parse_to_rules(df: pd.DataFrame):
                 rule.involved_sheets.append(value)
 
         for restriction_row in ["rows", "columns"]:
-            restricted_list = getattr(rule, "restricted_"+restriction_row)
+            restricted_list = getattr(rule, "involved_" + restriction_row)
             value = parse_value(row[restriction_row])
             if value:
                 value = value.lstrip("(").rstrip(")").strip()
@@ -57,29 +53,28 @@ class Locator:
             elif part.startswith("c"):
                 self.col = part.lstrip("c")
             else:
-                self.sheet = part
+                self.report = part
 
     def __init__(self):
-        self.sheet = None
+        self.report = None
         self.row = None
         self.col = None
 
     def is_valid(self):
-        return self.sheet and self.row and self.col
+        return self.report and self.row and self.col
 
     def __str__(self):
-        return f"{self.__class__.__name__}(sheet={self.sheet}, row={self.row}, col={self.col})"
+        return f"{self.__class__.__name__}(report={self.report}, row={self.row}, col={self.col})"
 
 
 class Rule:
-    ALL="All"
-    NAN="Nan"
+    ALL = "All"
 
     def __init__(self, id: str):
         self.id = id
         self.involved_sheets: List[str] = []
-        self.restricted_rows: List[str] = []
-        self.restricted_columns: List[str] = []
+        self.involved_rows: List[str] = []
+        self.involved_columns: List[str] = []
         self.formula: str = None
 
     def extract_locators(self) -> Dict[str, Locator]:
@@ -93,7 +88,13 @@ class Rule:
         return locator_dict
 
     def get_base_sheet(self):
-        return self.involved_sheets[0]
+        if len(self.involved_sheets) > 0:
+            return self.involved_sheets[0]
+        else:
+            return None
+
+    def __str__(self):
+        return f"Rule(id={self.id})"
 
 
 # Maps report sheets to rows and columns
@@ -103,7 +104,7 @@ class SheetMapper:
                  sheet_name: str,
                  row_names_index,
                  col_names_index
-    ):
+                 ):
         self.df: pd.DataFrame = pd.read_excel(file_path, sheet_name=sheet_name, header=None)
         self.row_series = self.df[row_names_index]
         self.col_series = self.df.iloc[col_names_index]
@@ -121,15 +122,24 @@ class SheetMapper:
     def get_value(self, row_value: str, col_value: str):
         row = self.find_row_by_id(row_value)
         if row.empty:
-            raise Exception(f"Cannot find row with value=\"{row_value}\" at column index={self.col_names_index} in sheet=\"{self.sheet_name}\" of file={self.file_path}")
+            raise Exception(
+                f"Cannot find row with value=\"{row_value}\" at column index={self.col_names_index} in sheet=\"{self.sheet_name}\" of file={self.file_path}")
 
         col = self.find_col_by_id(col_value)
         if col.empty:
-            raise Exception(f"Cannot find column with value=\"{col_value}\" at row index={self.col_names_index} in sheet=\"{self.sheet_name}\" of file={self.file_path}")
+            raise Exception(
+                f"Cannot find column with value=\"{col_value}\" at row index={self.col_names_index} in sheet=\"{self.sheet_name}\" of file={self.file_path}")
 
         return self.df.iloc[row.index[0], col.index[0]]
 
 
 def convert_to_python_expression(formula: str):
-    formula = formula.replace("=", "==")
+    formula = re.sub("([\\s\\d])=", "\\g<1>==", formula)
+    formula = re.sub("([\\d.]+)%", "(\\g<1>/100)", formula)
+    formula = re.sub("empty", "\"\"", formula)
+
+    if re.search("if\s(?:.+)\sthen", formula):
+        parts = formula.split("then")
+        formula = parts[1] + " " + parts[0] + " else True"
+
     return formula
