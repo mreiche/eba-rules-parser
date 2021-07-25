@@ -4,6 +4,7 @@ import pandas as pd
 import re
 import math
 
+
 def parse_value(value: str):
     if isinstance(value, str):
         value = value.strip()
@@ -19,7 +20,7 @@ def parse_to_rules(df: pd.DataFrame):
     rules: List[Rule] = []
 
     for index, row in df.iterrows():
-        rule = Rule(row["ID"])
+        rule = Rule(row)
         rules.append(rule)
         for sheets_row in ["T1", "T2", "T3", "T4", "T5", "T6", "T7"]:
             value = parse_value(row[sheets_row])
@@ -35,6 +36,7 @@ def parse_to_rules(df: pd.DataFrame):
                     restricted_list.append(value)
 
         rule.formula = row["Formula"]
+        rule.severity = row["Severity"]
 
         # print(row)
 
@@ -69,6 +71,8 @@ class Locator:
 
 class Rule:
     ALL = "All"
+    SEVERITY_WARNING = "Warning"
+    SEVERITY_ERROR = "Error"
 
     def __init__(self, id: str):
         self.id = id
@@ -76,6 +80,7 @@ class Rule:
         self.involved_rows: List[str] = []
         self.involved_columns: List[str] = []
         self.formula: str = None
+        self.severity: str = None
 
     def extract_locators(self) -> Dict[str, Locator]:
         locator_dict = {}
@@ -105,7 +110,7 @@ class SheetMapper:
                  row_names_index,
                  col_names_index
                  ):
-       # path_to_excel = pd.ExcelFile(file_path)
+        # path_to_excel = pd.ExcelFile(file_path)
         self.df: pd.DataFrame = pd.read_excel(file_path, sheet_name=sheet_name, header=None, engine='openpyxl')
         self.row_series = self.df[row_names_index]
         self.col_series = self.df.iloc[col_names_index]

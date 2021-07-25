@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
 
 # Initialize the report mappers
-test_sheet_mapper = SheetMapper("Report.xlsx", sheet_name="1", row_names_index=1, col_names_index=1)
+test_sheet_mapper = SheetMapper("Report.xlsx", sheet_name="Eins", row_names_index=1, col_names_index=1)
 
 # The report name to sheet mapper dictionary
 sheet_mappers = {
@@ -30,5 +30,5 @@ LOGGER.info(f"Parse {len(valid_rules)} valid rules of {len(df)}")
 
 rules = parse_to_rules(valid_rules)
 
-#test_rules_with_mappers([rules[0]], sheet_mappers)
+test_rules_with_mappers(rules, sheet_mappers)
 

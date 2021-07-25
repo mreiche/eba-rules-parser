@@ -70,4 +70,14 @@ rule = Rule("Max")
 rule.formula = " 3 != max(3,10)"
 rules.append(rule)
 
+rule = Rule("Fail with Warning")
+rule.formula = "3 = 1"
+rule.severity = Rule.SEVERITY_WARNING
+rules.append(rule)
+
+rule = Rule("Fail with Error")
+rule.formula = "3 = 1"
+rule.severity = Rule.SEVERITY_ERROR
+rules.append(rule)
+
 test_rules_with_mappers(rules, sheet_mappers)

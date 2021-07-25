@@ -85,5 +85,8 @@ def callout(rule: Rule, expression: str):
     if ret:
         LOGGER.info(f"PASS: {rule}: {rule.formula}")
     else:
-        LOGGER.warning(f"FAIL: {rule}: {rule.formula}, Python expression: {expression}")
-
+        msg = f"{rule.severity.upper()}: {rule}: {rule.formula}, Python expression: {expression}"
+        if rule.severity == Rule.SEVERITY_WARNING:
+            LOGGER.warning(msg)
+        else:
+            LOGGER.error(msg)
