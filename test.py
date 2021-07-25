@@ -70,7 +70,4 @@ rule = Rule("Max")
 rule.formula = " 3 != max(3,10)"
 rules.append(rule)
 
-rule = Rule("outra regra")
-rule.formula = "-15 -1 = {TestSheet, r0100, c0030} - {TestSheet, r0200, c0040}"
-rules.append(rule)
 test_rules_with_mappers(rules, sheet_mappers)
