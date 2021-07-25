@@ -7,7 +7,7 @@ import copy
 LOGGER = logging.getLogger(__name__)
 
 
-def create_expression(rule: Rule,sheet_mappers: Dict[str, SheetMapper]):
+def generate_expression(rule: Rule, sheet_mappers: Dict[str, SheetMapper]):
 
     locators = rule.extract_locators()
 
@@ -90,7 +90,7 @@ def get_sheet_mapper(report_name, sheet_mappers: Dict[str, SheetMapper]):
 
 def test_rules_with_mappers(rules: List[Rule],sheet_mappers: Dict[str, SheetMapper]):
     for rule in rules:
-        for expression in create_expression(rule, sheet_mappers):
+        for expression in generate_expression(rule, sheet_mappers):
             callout(rule, expression)
 
 
