@@ -1,19 +1,19 @@
+# Eba rules parser
 
-From:
+## Goal
+
+Parse formulars from the validation file.
 
 ```
 {r0020} = {r0030} + {r0130} + {r0180} + {r0200} + {r0210} + {r0220} + {r0230} + {r0240} + {r0250} + {r0300} + {r0340} + {r0370} + {r0380} + {r0390} + {r0430} + {r0440} + {r0450} + {r0460} + {r0470} + {r0471} + {r0472} + {r0480} + {r0490} + {r0500} + {r0510} + {r0513} + {r0514} + {r0515} + {r0520} + {r0524} + {r0529}
 ```
 
-To
+And eval them like:
 ```python
-sheet[:0020] = sheet[:0030] + sheet[:0130] + ...
+ret = eval("30 == 13.3 + 52 + ...")
 ```
 
-Final
-```python
-data = {
-    "sheet": get_sheet("C1.xls")
-}
-pass = eval("sheet[:0020] = sheet[:0030] + sheet[:0130] + ...", None, data}
-```
+## Files
+
+- `test.py`: Contains tests for parsing and evaluating rules using custom test report.
+- `report.py`: Runs rules from official validation file against sheet mappers.
