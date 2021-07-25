@@ -7,10 +7,8 @@ import re
 def parse_value(value: str):
     if isinstance(value, str):
         value = value.strip()
-        if len(value) == 0:
-            return None
-
-        return value
+        if len(value) > 0:
+            return value
 
     return None
 
