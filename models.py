@@ -2,7 +2,6 @@ from typing import List, Dict
 
 import pandas as pd
 import re
-import math
 
 
 def parse_value(value: str):
@@ -25,7 +24,7 @@ def parse_to_rules(df: pd.DataFrame):
         for sheets_row in ["T1", "T2", "T3", "T4", "T5", "T6", "T7"]:
             value = parse_value(row[sheets_row])
             if value:
-                rule.involved_sheets.append(value)
+                rule.involved_reports.append(value)
 
         for restriction_row in ["rows", "columns"]:
             restricted_list = getattr(rule, "involved_" + restriction_row)
@@ -76,11 +75,11 @@ class Rule:
 
     def __init__(self, id: str):
         self.id = id
-        self.involved_sheets: List[str] = []
+        self.involved_reports: List[str] = []
         self.involved_rows: List[str] = []
         self.involved_columns: List[str] = []
-        self.formula: str = None
-        self.severity: str = None
+        self.formula = ""
+        self.severity = Rule.SEVERITY_WARNING
 
     def extract_locators(self) -> Dict[str, Locator]:
         locator_dict = {}
@@ -92,11 +91,17 @@ class Rule:
 
         return locator_dict
 
-    def get_base_sheet(self):
-        if len(self.involved_sheets) > 0:
-            return self.involved_sheets[0]
+    def get_base_report(self):
+        if len(self.involved_reports) > 0:
+            return self.involved_reports[0]
         else:
             return None
+
+    def all_rows_involved(self):
+        if len(self.involved_rows) > 0 and self.involved_rows[0] == Rule.ALL:
+            return True
+        else:
+            return False
 
     def __str__(self):
         return f"Rule(id={self.id})"
@@ -138,13 +143,16 @@ class SheetMapper:
 
         return self.df.iloc[row.index[0], col.index[0]]
 
+    def get_all_rows(self):
+        return self.row_series[self.row_names_index+1:]
+
 
 def convert_to_python_expression(formula: str):
     formula = re.sub("([\\s\\d])=", "\\g<1>==", formula)
     formula = re.sub("([\\d.]+)%", "(\\g<1>/100)", formula)
     formula = re.sub("empty", "\"\"", formula)
 
-    if re.search("if\s(?:.+)\sthen", formula):
+    if re.search("if\\s(?:.+)\\sthen", formula):
         parts = formula.split("then")
         formula = parts[1] + " " + parts[0] + " else True"
 

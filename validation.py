@@ -1,32 +1,36 @@
 import math
 from typing import Dict, List
-from models import SheetMapper, Rule, convert_to_python_expression
+from models import SheetMapper, Rule, convert_to_python_expression, Locator
 import logging
 import copy
 
 LOGGER = logging.getLogger(__name__)
 
 
-def create_expression(
-        rule: Rule,
-        sheet_mappers: Dict[str, SheetMapper]
-):
+def create_expression(rule: Rule,sheet_mappers: Dict[str, SheetMapper]):
 
-    for locators in prepare_locators(rule):
+    locators = rule.extract_locators()
+
+    for base_locator in generate_base_locator(rule, sheet_mappers):
+        final_locators = copy.deepcopy(locators)
+
         parsed_formula = rule.formula
 
-        for expr, locator in locators.items():
+        for expr, locator in final_locators.items():
 
             if not locator.report:
-                locator.report = rule.get_base_sheet()
+                locator.report = rule.get_base_report()
+
+            if not locator.row:
+                locator.row = base_locator.row
+
+            if not locator.col:
+                locator.col = base_locator.col
 
             if not locator.is_valid():
                 raise Exception(f"{locator} for expression={expr} in {rule} is not valid")
 
-            if locator.report not in sheet_mappers:
-                raise Exception(f"No mapper registered for sheet=\"{locator.report}")
-
-            sheet_mapper = sheet_mappers[locator.report]
+            sheet_mapper = get_sheet_mapper(locator.report, sheet_mappers)
             try:
                 value = sheet_mapper.get_value(locator.row, locator.col)
                 if math.isnan(value):
@@ -39,42 +43,52 @@ def create_expression(
         yield convert_to_python_expression(parsed_formula)
 
 
-def prepare_locators(rule: Rule):
+def generate_base_locator(rule: Rule, sheet_mappers: Dict[str, SheetMapper]):
+    involved_row_count = len(rule.involved_rows)
+    involved_col_count = len(rule.involved_columns)
 
-    # Dont know if this can happen, but we need a warning here!
-    if len(rule.involved_rows) > 0 and len(rule.involved_columns) > 0:
-        raise Exception(f"{rule} has both restricted rows and columns which is not supported right now")
-
-    locators = rule.extract_locators()
-
-    # Yield locators with all involved rows
-    if len(rule.involved_rows) > 0:
-        for row in rule.involved_rows:
-            final_locators = copy.deepcopy(locators)
-            for expr, locator in final_locators.items():
-                if not locator.row:
-                    locator.row = row
-            yield final_locators
-
-    # Yield locators with all involved columns
-    elif len(rule.involved_columns) > 0:
+    # Generate row/col permutation
+    if involved_row_count > 0 and involved_col_count > 0:
+        for row in get_involved_rows(rule, sheet_mappers):
+            for col in rule.involved_columns:
+                locator = Locator()
+                locator.row = row
+                locator.col = col
+                yield locator
+    elif involved_row_count > 0:
+        for row in get_involved_rows(rule, sheet_mappers):
+            locator = Locator()
+            locator.row = row
+            yield locator
+    elif involved_col_count > 0:
         for col in rule.involved_columns:
-            final_locators = copy.deepcopy(locators)
-            for expr, locator in final_locators.items():
-                if not locator.col:
-                    locator.col = col
-            yield final_locators
-
+            locator = Locator()
+            locator.col = col
+            yield locator
     else:
-        # Yield all locators
-        yield locators
+        yield Locator()
 
 
-def test_rules_with_mappers(
-        rules: List[Rule],
-        sheet_mappers: Dict[str, SheetMapper]
-):
+def get_involved_rows(rule: Rule, sheet_mappers: Dict[str, SheetMapper]):
+    if rule.all_rows_involved():
+        base_report = rule.get_base_report()
+        if not base_report:
+            raise Exception(f"{rule} has no base report")
 
+        sheet_mapper = get_sheet_mapper(base_report, sheet_mappers)
+        rows = sheet_mapper.get_all_rows().values
+    else:
+        rows = rule.involved_rows
+    return rows
+
+
+def get_sheet_mapper(report_name, sheet_mappers: Dict[str, SheetMapper]):
+    if report_name not in sheet_mappers:
+        raise Exception(f"No {SheetMapper.__class__.__name__} registered for report=\"{report_name}")
+    return sheet_mappers[report_name]
+
+
+def test_rules_with_mappers(rules: List[Rule],sheet_mappers: Dict[str, SheetMapper]):
     for rule in rules:
         for expression in create_expression(rule, sheet_mappers):
             callout(rule, expression)
