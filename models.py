@@ -133,4 +133,5 @@ class SheetMapper:
 
 def convert_to_python_expression(formula: str):
     formula = formula.replace("=", "==")
+    #"empty", "np.nan"
     return formula
