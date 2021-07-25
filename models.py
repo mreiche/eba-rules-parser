@@ -19,7 +19,7 @@ def parse_to_rules(df: pd.DataFrame):
     rules: List[Rule] = []
 
     for index, row in df.iterrows():
-        rule = Rule(row)
+        rule = Rule(row["ID"])
         rules.append(rule)
         for sheets_row in ["T1", "T2", "T3", "T4", "T5", "T6", "T7"]:
             value = parse_value(row[sheets_row])
@@ -81,8 +81,8 @@ class Rule:
         self.formula = ""
         self.severity = Rule.SEVERITY_WARNING
 
-    def extract_locators(self) -> Dict[str, Locator]:
-        locator_dict = {}
+    def extract_locators(self):
+        locator_dict: Dict[str, Locator] = {}
         locators = re.findall("{[^}]+}", self.formula)
         for locator_str in locators:
             locator = Locator()
@@ -134,12 +134,12 @@ class SheetMapper:
         row = self.find_row_by_id(row_value)
         if row.empty:
             raise Exception(
-                f"Cannot find row with value=\"{row_value}\" at column index={self.col_names_index} in sheet=\"{self.sheet_name}\" of file={self.file_path}")
+                f"Cannot find row with value=\"{row_value}\" at column index={self.col_names_index} in sheet=\"{self.sheet_name}\" of file=\"{self.file_path}\"")
 
         col = self.find_col_by_id(col_value)
         if col.empty:
             raise Exception(
-                f"Cannot find column with value=\"{col_value}\" at row index={self.col_names_index} in sheet=\"{self.sheet_name}\" of file={self.file_path}")
+                f"Cannot find column with value=\"{col_value}\" at row index={self.col_names_index} in sheet=\"{self.sheet_name}\" of file=\"{self.file_path}\"")
 
         return self.df.iloc[row.index[0], col.index[0]]
 
@@ -148,10 +148,20 @@ class SheetMapper:
 
 
 def convert_to_python_expression(formula: str):
+    # From: a = b
+    # To: a == b
     formula = re.sub("([\\s\\d])=", "\\g<1>==", formula)
+
+    # From: a%
+    # To: (a/100)
     formula = re.sub("([\\d.]+)%", "(\\g<1>/100)", formula)
+
+    # From: a = empty
+    # To: a == ""
     formula = re.sub("empty", "\"\"", formula)
 
+    # From: if a != empty then b > 30
+    # To: b > 30 if a != "" else True
     if re.search("if\\s(?:.+)\\sthen", formula):
         parts = formula.split("then")
         formula = parts[1] + " " + parts[0] + " else True"
