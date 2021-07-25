@@ -64,12 +64,14 @@ def test_rules_with_mappers(
 ):
 
     for rule in rules:
-        create_expression(rule, sheet_mappers)
+        expression = create_expression(rule, sheet_mappers)
+        callout(rule, expression)
 
 
-def callout(rule: Rule, ret: bool):
+def callout(rule: Rule, expression: str):
+    ret = eval(expression)
     if ret:
         LOGGER.info(f"PASS: {rule.id}={rule.formula}")
     else:
-        LOGGER.warning(f"FAIL: {rule.id}={rule.formula}")
+        LOGGER.warning(f"FAIL: {rule.id}={rule.formula} -> {expression}")
 

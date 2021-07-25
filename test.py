@@ -1,7 +1,7 @@
 from models import SheetMapper, Rule
 import logging
 
-from validation import prepare_locators, create_expression, callout
+from validation import prepare_locators, create_expression, callout, test_rules_with_mappers
 
 logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
@@ -17,13 +17,17 @@ sheet_mappers = {
     "TestSheet": test_sheet_mapper
 }
 
+rules = []
+
 # Create manual rules
 rule = Rule("MeineRegel")
 rule.involved_sheets.append("TestSheet")
 rule.formula = "{r0100, c0030} + 3 = 1340"
+rules.append(rule)
 
-locators = prepare_locators(rule)
+rule = Rule("Andere Regel")
+rule.formula = "-16 = {TestSheet, r0200, c0040} - {TestSheet, r0200, c0030}"
+rules.append(rule)
 
-expression = create_expression(rule, sheet_mappers)
-ret = eval(expression)
-callout(rule, ret)
+
+test_rules_with_mappers(rules, sheet_mappers)
