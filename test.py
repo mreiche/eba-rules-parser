@@ -1,24 +1,29 @@
-from eba_rules import parse_to_rules
-
-import pandas as pd
-
+from models import SheetMapper, Rule
 import logging
 
+from validation import prepare_locators, create_expression, callout
+
+logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger(__name__)
 
-# read by default 1st sheet of an excel file
-df = pd.read_excel('EBA Validation Rules 2021-06-30.xlsx', sheet_name="v3.1.phase1")
+# Initialize the report mappers
+test_sheet_mapper = SheetMapper("Report.xlsx", sheet_name="1", row_names_index=1, col_names_index=1)
+assert 1337 == test_sheet_mapper.get_value("0100", "0030")
+assert 26 == test_sheet_mapper.get_value("0200", "0040")
 
-valid_rules = df[df["Deleted"] != "y"]
+# The report name to sheet mapper dictionary
+sheet_mappers = {
+    # The report name used rules
+    "TestSheet": test_sheet_mapper
+}
 
-sheet_starts_with = ("C 01", "C 02", "C 03", "C 04", "C 05", "C 06")
+# Create manual rules
+rule = Rule("MeineRegel")
+rule.involved_sheets.append("TestSheet")
+rule.formula = "{r0100, c0030} + 3 = 1340"
 
-valid_rules = valid_rules[valid_rules["T1"].str.startswith(sheet_starts_with)]
+locators = prepare_locators(rule)
 
-LOGGER.info(f"Parse {len(valid_rules)} valid rules of {len(df)}")
-
-rules = parse_to_rules(valid_rules)
-
-print(rules)
-
-rules[0].parse_formula()
+expression = create_expression(rule, sheet_mappers)
+ret = eval(expression)
+callout(rule, ret)
