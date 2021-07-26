@@ -19,18 +19,18 @@ def parse_to_rules(df: pd.DataFrame):
     for index, row in df.iterrows():
         rule = Rule(row["ID"])
         rules.append(rule)
-        for sheets_row in ["T1", "T2", "T3", "T4", "T5", "T6", "T7"]:
-            value = parse_value(row[sheets_row])
+        for involved_report_col in ["T1", "T2", "T3", "T4", "T5", "T6", "T7"]:
+            value = parse_value(row[involved_report_col])
             if value:
                 rule.involved_reports.append(value)
 
-        for restriction_row in ["rows", "columns"]:
-            restricted_list = getattr(rule, "involved_" + restriction_row)
-            value = parse_value(row[restriction_row])
+        for involved_data_col in ["rows", "columns"]:
+            list = getattr(rule, "involved_" + involved_data_col)
+            value = parse_value(row[involved_data_col])
             if value:
                 value = value.lstrip("(").rstrip(")").strip()
                 for value in value.split():
-                    restricted_list.append(value)
+                    list.append(value)
 
         rule.formula = row["Formula"]
         rule.severity = row["Severity"]
