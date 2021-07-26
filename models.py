@@ -23,7 +23,7 @@ def parse_list_value(value: str):
                 values.append(part.strip())
             return values
         return [value]
-    return None
+    return []
 
 
 def parse_to_rules(df: pd.DataFrame):

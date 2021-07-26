@@ -26,6 +26,9 @@ valid_rules = df[df["Deleted"] != "y"]
 sheet_starts_with = ("C 01", "C 02", "C 03", "C 04", "C 05", "C 06")
 valid_rules = valid_rules[valid_rules["T1"].str.startswith(sheet_starts_with)]
 
+ignore_rules = ("v6520_a", "v6305_a", "v4023_a")
+valid_rules = valid_rules[~valid_rules["ID"].isin(ignore_rules)]
+
 LOGGER.info(f"Parse {len(valid_rules)} valid rules of {len(df)}")
 
 rules = parse_to_rules(valid_rules)
