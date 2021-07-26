@@ -35,8 +35,6 @@ def parse_to_rules(df: pd.DataFrame):
         rule.formula = row["Formula"]
         rule.severity = row["Severity"]
 
-        # print(row)
-
     return rules
 
 
@@ -76,6 +74,7 @@ class Rule:
         self.formula = ""
         self.severity = Rule.SEVERITY_WARNING
 
+    # Extract all locators from the formula
     def extract_locators(self):
         locator_dict: Dict[str, Locator] = {}
         locators = re.findall("{[^}]+}", self.formula)
@@ -110,10 +109,9 @@ class SheetMapper:
                  row_names_index,
                  col_names_index
                  ):
-        # path_to_excel = pd.ExcelFile(file_path)
         self.df: pd.DataFrame = pd.read_excel(file_path, sheet_name=sheet_name, header=None, engine='openpyxl')
-        self.row_series = self.df[row_names_index]
-        self.col_series = self.df.iloc[col_names_index]
+        self.row_series = self.df[row_names_index] # blue in Report.xlsx
+        self.col_series = self.df.iloc[col_names_index] # green in Report.xlsx
         self.col_names_index = col_names_index
         self.row_names_index = row_names_index
         self.file_path = file_path
@@ -142,6 +140,7 @@ class SheetMapper:
         return self.row_series[self.row_names_index+1:]
 
 
+# Converts a formula to an evaluable python expression
 def convert_to_python_expression(formula: str):
     # From: a = b
     # To: a == b
