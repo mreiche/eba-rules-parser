@@ -19,7 +19,7 @@ def parse_list_value(value: str):
         if value.startswith("(") and value.endswith(")"):
             value = value.lstrip("(").rstrip(")")
             values = []
-            for part in value.split(","):
+            for part in value.split(";"):
                 values.append(part.strip())
             return values
         return [value]
