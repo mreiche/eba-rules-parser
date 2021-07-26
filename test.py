@@ -105,4 +105,9 @@ rule.involved_columns.append("0080")
 rule.formula = "{TestSheet} != empty"
 rules.append(rule)
 
+# rule = Rule("All rows not empty")
+# rule.involved_rows.extend(["0400", "0500", "0600"])
+# rule.formula = "{TestSheet} != empty"
+# rules.append(rule)
+
 test_rules_with_mappers(rules, sheet_mappers)

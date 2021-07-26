@@ -59,9 +59,6 @@ class Locator:
         self.row = None
         self.col = None
 
-    def is_valid(self):
-        return self.report and self.row and self.col
-
     def __str__(self):
         return f"{self.__class__.__name__}(report={self.report}, row={self.row}, col={self.col})"
 

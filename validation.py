@@ -20,15 +20,18 @@ def generate_expression(rule: Rule, sheet_mappers: Dict[str, SheetMapper]):
 
             if not locator.report:
                 locator.report = rule.get_base_report()
+                if not locator.report:
+                    raise Exception(f"{locator} for expression={expr} in {rule} with base {base_locator} has no report reference")
 
             if not locator.row:
                 locator.row = base_locator.row
+                if not locator.row:
+                    raise Exception(f"{locator} for expression={expr} in {rule} with base {base_locator} has no row reference")
 
             if not locator.col:
                 locator.col = base_locator.col
-
-            if not locator.is_valid():
-                raise Exception(f"{locator} for expression={expr} in {rule} is not valid")
+                if not locator.col:
+                    raise Exception(f"{locator} for expression={expr} in {rule} with base {base_locator} has no column reference")
 
             sheet_mapper = get_sheet_mapper(locator.report, sheet_mappers)
             try:
@@ -38,7 +41,7 @@ def generate_expression(rule: Rule, sheet_mappers: Dict[str, SheetMapper]):
 
                 parsed_formula = parsed_formula.replace(expr, str(value))
             except Exception as e:
-                raise Exception(f"Failed validating {rule} formula=\"{parsed_formula}\"", e)
+                raise Exception(f"Cannot create expression for {rule} formula=\"{parsed_formula}\"", e)
 
         yield convert_to_python_expression(parsed_formula)
 
@@ -73,7 +76,7 @@ def get_involved_rows(rule: Rule, sheet_mappers: Dict[str, SheetMapper]):
     if rule.all_rows_involved():
         base_report = rule.get_base_report()
         if not base_report:
-            raise Exception(f"{rule} has no base report")
+            raise Exception(f"{rule} has no involved base report")
 
         sheet_mapper = get_sheet_mapper(base_report, sheet_mappers)
         rows = sheet_mapper.get_all_rows().values
@@ -88,7 +91,7 @@ def get_sheet_mapper(report_name, sheet_mappers: Dict[str, SheetMapper]):
     return sheet_mappers[report_name]
 
 
-def test_rules_with_mappers(rules: List[Rule],sheet_mappers: Dict[str, SheetMapper]):
+def test_rules_with_mappers(rules: List[Rule], sheet_mappers: Dict[str, SheetMapper]):
     for rule in rules:
         for expression in generate_expression(rule, sheet_mappers):
             callout(rule, expression)
