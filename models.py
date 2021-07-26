@@ -13,6 +13,19 @@ def parse_value(value: str):
     return None
 
 
+def parse_list_value(value: str):
+    value = parse_value(value)
+    if value:
+        if value.startswith("(") and value.endswith(")"):
+            value = value.lstrip("(").rstrip(")")
+            values = []
+            for part in value.split(","):
+                values.append(part.strip())
+            return values
+        return [value]
+    return None
+
+
 def parse_to_rules(df: pd.DataFrame):
     rules: List[Rule] = []
 
@@ -25,12 +38,8 @@ def parse_to_rules(df: pd.DataFrame):
                 rule.involved_reports.append(value)
 
         for involved_data_col in ["rows", "columns"]:
-            list = getattr(rule, "involved_" + involved_data_col)
-            value = parse_value(row[involved_data_col])
-            if value:
-                value = value.lstrip("(").rstrip(")").strip()
-                for value in value.split():
-                    list.append(value)
+            target_list: List[str] = getattr(rule, "involved_" + involved_data_col)
+            target_list.extend(parse_list_value(row[involved_data_col]))
 
         rule.formula = row["Formula"]
         rule.severity = row["Severity"]
@@ -39,23 +48,26 @@ def parse_to_rules(df: pd.DataFrame):
 
 
 class Locator:
-    # {C 03.00, r0060, c0010}
-    def parse(self, locator: str):
-        locator = locator.lstrip("{").rstrip("}")
-        parts = locator.split(",")
-        for part in parts:
-            part = part.strip()
-            if part.startswith("r"):
-                self.row = part.lstrip("r")
-            elif part.startswith("c"):
-                self.col = part.lstrip("c")
-            else:
-                self.report = part
+    ALL = "NNN"
 
     def __init__(self):
         self.report = None
         self.row = None
         self.col = None
+
+    # {C 03.00, r0060, c0010}
+    def parse(self, locator: str):
+        locator = locator.lstrip("{").rstrip("}")
+        parts = locator.split(",")
+        for part in parts:
+            values = parse_list_value(part)
+            value = values[0]
+            if value.startswith("r"):
+                self.row = value.lstrip("r")
+            elif value.startswith("c"):
+                self.col = value.lstrip("c")
+            else:
+                self.report = value
 
     def __str__(self):
         return f"{self.__class__.__name__}(report={self.report}, row={self.row}, col={self.col})"
@@ -136,7 +148,7 @@ class SheetMapper:
 
         return self.df.iloc[row.index[0], col.index[0]]
 
-    def get_all_rows(self):
+    def get_row_ids(self):
         return self.row_series[self.row_names_index+1:]
 
 

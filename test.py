@@ -1,6 +1,7 @@
 import math
+import sys
 
-from models import SheetMapper, Rule
+from models import SheetMapper, Rule, parse_list_value
 import logging
 
 from validation import test_rules_with_mappers
@@ -109,5 +110,10 @@ rules.append(rule)
 # rule.involved_rows.extend(["0400", "0500", "0600"])
 # rule.formula = "{TestSheet} != empty"
 # rules.append(rule)
+
+rule = Rule("Sum")
+rule.involved_columns.append("0080")
+rule.formula = "{TestSheet, r0700, c0030}-2 = sum({Report2, (rNNN)})"
+rules.append(rule)
 
 test_rules_with_mappers(rules, sheet_mappers)

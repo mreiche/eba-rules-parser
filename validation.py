@@ -6,6 +6,7 @@ import copy
 
 LOGGER = logging.getLogger(__name__)
 
+
 # Generates python expressions to eval
 # based on the rule formula and involved rows/columns
 def generate_expression(rule: Rule, sheet_mappers: Dict[str, SheetMapper]):
@@ -45,9 +46,14 @@ def generate_expression(rule: Rule, sheet_mappers: Dict[str, SheetMapper]):
 
             sheet_mapper = get_sheet_mapper(locator.report, sheet_mappers)
             try:
-                value = sheet_mapper.get_value(locator.row, locator.col)
-                if math.isnan(value):
-                    value = "\"\""
+                if locator.row == Locator.ALL:
+                    value = []
+                    for row in sheet_mapper.get_row_ids():
+                        value.append(sheet_mapper.get_value(row, locator.col))
+                else:
+                    value = sheet_mapper.get_value(locator.row, locator.col)
+                    if math.isnan(value):
+                        value = "\"\""
 
                 # Replace the locator expression by its actual value
                 # Example: {Sheet, r001, c002} -> 13.13
@@ -99,7 +105,7 @@ def get_involved_rows(rule: Rule, sheet_mappers: Dict[str, SheetMapper]):
             raise Exception(f"{rule} has no involved base report")
 
         sheet_mapper = get_sheet_mapper(base_report, sheet_mappers)
-        rows = sheet_mapper.get_all_rows().values
+        rows = sheet_mapper.get_row_ids().values
     else:
         rows = rule.involved_rows
     return rows
